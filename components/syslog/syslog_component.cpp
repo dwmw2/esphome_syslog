@@ -12,6 +12,11 @@
 #include "esphome/core/defines.h"
 */
 
+#ifdef USE_SOCKET_IMPL_LWIP_TCP
+#include <lwip/ip.h>
+#define IPPROTO_UDP IP_PROTO_UDP
+#endif
+
 namespace esphome {
 namespace syslog {
 
@@ -59,12 +64,14 @@ void SyslogComponent::setup() {
         this->server_socklen = sizeof(*server4);
     }
     if (!this->server_socklen) {
-        ESP_LOGW(TAG, "Failed to parse server IP address '%s'", this->settings_.address.c_str());
+        ESP_LOGE(TAG, "Failed to parse server IP address '%s'", this->settings_.address.c_str());
+        this->mark_failed();
         return;
     }
     this->socket_ = socket::socket(this->server.ss_family, SOCK_DGRAM, IPPROTO_UDP);
     if (!this->socket_) {
-        ESP_LOGW(TAG, "Failed to create UDP socket");
+        ESP_LOGE(TAG, "Failed to create UDP socket");
+        this->mark_failed();
         return;
     }
 
@@ -91,6 +98,9 @@ void SyslogComponent::loop() {
 
 void SyslogComponent::log(uint8_t level, const std::string &tag, const std::string &payload) {
     level = level > 7 ? 7 : level;
+
+    if (this->is_failed())
+        return;
 
     if (!this->socket_) {
         ESP_LOGW(TAG, "Tried to send \"%s\"@\"%s\" with level %d but socket isn't connected", tag.c_str(), payload.c_str(), level);
