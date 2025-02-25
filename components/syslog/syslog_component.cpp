@@ -102,6 +102,8 @@ void SyslogComponent::log(uint8_t level, const std::string &tag, const std::stri
     if (this->is_failed())
         return;
 
+    level = level > 7 ? 7 : level;
+
     if (!this->socket_) {
         ESP_LOGW(TAG, "Tried to send \"%s\"@\"%s\" with level %d but socket isn't connected", tag.c_str(), payload.c_str(), level);
         return;
