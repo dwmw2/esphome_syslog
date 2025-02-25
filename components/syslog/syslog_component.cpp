@@ -97,7 +97,6 @@ void SyslogComponent::loop() {
 }
 
 void SyslogComponent::log(uint8_t level, const std::string &tag, const std::string &payload) {
-    level = level > 7 ? 7 : level;
 
     if (this->is_failed())
         return;
